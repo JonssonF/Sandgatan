@@ -1,0 +1,16 @@
+@Sandgatan.Api_HostAddress = http://localhost:5043
+
+GET {{Sandgatan.Api_HostAddress}}/api/health
+Accept: application/json
+
+###
+
+GET {{Sandgatan.Api_HostAddress}}/api/categories
+Accept: application/json
+
+###
+
+GET {{Sandgatan.Api_HostAddress}}/api/budget/2026/9/summary
+Accept: application/json
+
+###

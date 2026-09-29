@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Sandgatan.Api/Sandgatan.Api.csproj" />
+  <Project Path="Sandgatan.Application/Sandgatan.Application.csproj" />
+  <Project Path="Sandgatan.Domain/Sandgatan.Domain.csproj" />
+  <Project Path="Sandgatan.Infrastructure/Sandgatan.Infrastructure.csproj" />
+</Solution>

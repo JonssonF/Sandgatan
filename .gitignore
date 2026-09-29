@@ -1,0 +1,26 @@
+# .NET
+bin/
+obj/
+*.user
+
+# SQLite data (local dev + Docker volume mount target)
+Sandgatan.Api/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Node / frontend
+sandgatan-web/node_modules/
+sandgatan-web/dist/
+sandgatan-web/.vite/
+
+# Env secrets — never commit real values, only .env.example
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vs/
+.vscode/
+*.swp
+.DS_Store
