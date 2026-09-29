@@ -26,8 +26,10 @@ public class ExpenseService(IExpenseRepository repository) : IExpenseService
         {
             Name = dto.Name,
             Amount = dto.ResolveTotal(),
-            InterestAmount = dto.InterestAmount,
+            InterestAmount = dto.ResolveInterest(),
             AmortizationAmount = dto.AmortizationAmount,
+            LoanBalance = dto.LoanBalance,
+            InterestRatePercent = dto.InterestRatePercent,
             CategoryId = dto.CategoryId,
             ExpenseType = dto.ExpenseType,
             Month = dto.Month,
@@ -48,8 +50,10 @@ public class ExpenseService(IExpenseRepository repository) : IExpenseService
 
         expense.Name = dto.Name;
         expense.Amount = dto.ResolveTotal();
-        expense.InterestAmount = dto.InterestAmount;
+        expense.InterestAmount = dto.ResolveInterest();
         expense.AmortizationAmount = dto.AmortizationAmount;
+        expense.LoanBalance = dto.LoanBalance;
+        expense.InterestRatePercent = dto.InterestRatePercent;
         expense.CategoryId = dto.CategoryId;
         expense.ExpenseType = dto.ExpenseType;
         expense.Month = dto.Month;
@@ -91,6 +95,7 @@ public class ExpenseService(IExpenseRepository repository) : IExpenseService
             DueDay = expense.DueDay,
             Notes = expense.Notes
         };
+        LoanMath.RollForward(expense, copy);
         copy = await repository.AddAsync(copy, ct);
         var saved = await repository.GetByIdAsync(copy.Id, ct);
         return ToDto(saved!);
@@ -103,6 +108,8 @@ public class ExpenseService(IExpenseRepository repository) : IExpenseService
         Amount = expense.Amount,
         InterestAmount = expense.InterestAmount,
         AmortizationAmount = expense.AmortizationAmount,
+        LoanBalance = expense.LoanBalance,
+        InterestRatePercent = expense.InterestRatePercent,
         CategoryId = expense.CategoryId,
         CategoryName = expense.Category?.Name ?? string.Empty,
         ExpenseType = expense.ExpenseType,

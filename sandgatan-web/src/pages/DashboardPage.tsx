@@ -57,7 +57,12 @@ export function DashboardPage() {
             <SummaryCard label="Kvar efter utgifter" amount={data.remainingAfterExpenses} icon={IconWallet} color="brand" emphasis />
             <SummaryCard label="Kvar efter sparande" amount={data.remainingAfterSavings} icon={IconReportMoney} color="brand" emphasis />
             {data.totalLoans > 0 && (
-              <LoanCard total={data.totalLoans} interest={data.totalLoanInterest} amortization={data.totalLoanAmortization} />
+              <LoanCard
+                total={data.totalLoans}
+                interest={data.totalLoanInterest}
+                amortization={data.totalLoanAmortization}
+                balance={data.totalLoanBalance}
+              />
             )}
           </SimpleGrid>
 

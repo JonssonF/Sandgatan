@@ -26,6 +26,7 @@ public class BudgetSummaryService(
         var totalLoans = loans.Sum(e => e.Amount);
         var totalLoanInterest = loans.Sum(e => e.InterestAmount ?? 0);
         var totalLoanAmortization = loans.Sum(e => e.AmortizationAmount ?? 0);
+        var totalLoanBalance = loans.Sum(e => e.LoanBalance ?? 0);
 
         var remainingAfterExpenses = totalIncome - totalExpenses;
         var remainingAfterSavings = remainingAfterExpenses - totalSavings;
@@ -43,6 +44,7 @@ public class BudgetSummaryService(
             TotalExpenses = totalExpenses,
             TotalSavings = totalSavings,
             TotalLoans = totalLoans,
+            TotalLoanBalance = totalLoanBalance,
             TotalLoanInterest = totalLoanInterest,
             TotalLoanAmortization = totalLoanAmortization,
             RemainingAfterExpenses = remainingAfterExpenses,

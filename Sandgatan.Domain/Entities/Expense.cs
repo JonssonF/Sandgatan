@@ -11,6 +11,10 @@ public class Expense
     public decimal Amount { get; set; }
     public decimal? InterestAmount { get; set; }
     public decimal? AmortizationAmount { get; set; }
+    /// <summary>Remaining debt at the start of the month (loans only). With a rate, interest is calculated.</summary>
+    public decimal? LoanBalance { get; set; }
+    /// <summary>Annual interest rate in percent, e.g. 3.45 (loans only).</summary>
+    public decimal? InterestRatePercent { get; set; }
     public int CategoryId { get; set; }
     public Category? Category { get; set; }
     public ExpenseType ExpenseType { get; set; }

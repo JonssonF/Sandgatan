@@ -85,7 +85,7 @@ public class RecurringCopyService(
         var copied = 0;
         foreach (var expense in previous.Where(e => !existingNames.Contains(e.Name)))
         {
-            await expenseRepository.AddAsync(new Expense
+            var copy = new Expense
             {
                 Name = expense.Name,
                 Amount = expense.Amount,
@@ -98,7 +98,9 @@ public class RecurringCopyService(
                 IsRecurring = expense.IsRecurring,
                 DueDay = expense.DueDay,
                 Notes = expense.Notes
-            }, ct);
+            };
+            LoanMath.RollForward(expense, copy);
+            await expenseRepository.AddAsync(copy, ct);
             copied++;
         }
         return copied;

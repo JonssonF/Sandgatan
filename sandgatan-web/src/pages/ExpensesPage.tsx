@@ -18,7 +18,7 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCopy, IconEdit, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconCopy, IconEdit, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useCategories } from '../api/categories'
@@ -33,14 +33,19 @@ import type { ExpenseDto, ExpenseType, UpsertExpenseDto } from '../api/types'
 import { CategoryDot } from '../components/CategoryDot'
 import { CategoryModal } from '../components/CategoryModal'
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal'
+import { LoanProjection } from '../components/LoanProjection'
+import { LoanQuickEdit } from '../components/LoanQuickEdit'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
 import { formatSek } from '../lib/format'
+import { monthlyInterest } from '../lib/loanMath'
 
 const emptyForm = (year: number, month: number): UpsertExpenseDto => ({
   name: '',
   amount: null,
   interestAmount: null,
   amortizationAmount: null,
+  loanBalance: null,
+  interestRatePercent: null,
   categoryId: 0,
   expenseType: 'Fixed',
   month,
@@ -90,6 +95,8 @@ export function ExpensesPage() {
       amount: totalWasDerived ? null : expense.amount,
       interestAmount: expense.interestAmount ?? null,
       amortizationAmount: expense.amortizationAmount ?? null,
+      loanBalance: expense.loanBalance ?? null,
+      interestRatePercent: expense.interestRatePercent ?? null,
       categoryId: expense.categoryId,
       expenseType: expense.expenseType,
       month: expense.month,
@@ -103,18 +110,28 @@ export function ExpensesPage() {
 
   async function handleSave() {
     if (!form.name.trim() || !form.categoryId) return
-    if (form.amount == null && form.interestAmount == null && form.amortizationAmount == null) {
+    if (loanIncomplete) {
+      notifications.show({ message: 'Ange både total skuld och räntesats – eller lämna båda tomma.', color: 'red' })
+      return
+    }
+    if (!loanCalculated && form.amount == null && form.interestAmount == null && form.amortizationAmount == null) {
       notifications.show({
         message: selectedCategory?.isLoan ? 'Ange ett totalbelopp, eller ränta och/eller amortering.' : 'Ange ett belopp.',
         color: 'red',
       })
       return
     }
+    // Loan fields only apply to loan categories; calculated loans get interest and total from the backend.
+    const dto: UpsertExpenseDto = !selectedCategory?.isLoan
+      ? { ...form, loanBalance: null, interestRatePercent: null, interestAmount: null, amortizationAmount: null }
+      : loanCalculated
+        ? { ...form, amount: null, interestAmount: null }
+        : form
     if (editingId) {
-      await updateExpense.mutateAsync({ id: editingId, dto: form })
+      await updateExpense.mutateAsync({ id: editingId, dto })
       notifications.show({ message: 'Utgiften uppdaterades', color: 'teal' })
     } else {
-      await createExpense.mutateAsync(form)
+      await createExpense.mutateAsync(dto)
       notifications.show({ message: 'Utgiften lades till', color: 'teal' })
     }
     setDrawerOpen(false)
@@ -134,6 +151,9 @@ export function ExpensesPage() {
 
   const total = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0
   const selectedCategory = categories?.find((c) => c.id === form.categoryId)
+  const loanCalculated = !!selectedCategory?.isLoan && form.loanBalance != null && form.interestRatePercent != null
+  const loanIncomplete = !!selectedCategory?.isLoan && (form.loanBalance == null) !== (form.interestRatePercent == null)
+  const calculatedInterest = loanCalculated ? monthlyInterest(form.loanBalance!, form.interestRatePercent!) : null
   const categoryOptions = (categories ?? []).filter((c) => c.type === 'Expense').map((c) => ({ value: String(c.id), label: c.name }))
   const categoryById = new Map((categories ?? []).map((c) => [c.id, c]))
 
@@ -163,44 +183,70 @@ export function ExpensesPage() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {expenses.map((expense) => (
-                  <Table.Tr key={expense.id}>
-                    <Table.Td>
-                      {expense.name}
+                {expenses.map((expense) => {
+                  const isLoan = !!categoryById.get(expense.categoryId)?.isLoan
+                  const details = (
+                    <>
+                      {expense.loanBalance != null && (
+                        <Text size="xs" c="dimmed">
+                          Skuld {formatSek(expense.loanBalance)}
+                          {expense.interestRatePercent != null && ` · ${expense.interestRatePercent.toLocaleString('sv-SE')} %`}
+                        </Text>
+                      )}
                       {(expense.interestAmount != null || expense.amortizationAmount != null) && (
                         <Text size="xs" c="dimmed">
                           Ränta {formatSek(expense.interestAmount ?? 0)} · Amortering {formatSek(expense.amortizationAmount ?? 0)}
                         </Text>
                       )}
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap="xs" wrap="nowrap">
-                        <CategoryDot color={categoryById.get(expense.categoryId)?.color} />
-                        {expense.categoryName}
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge variant="light" color={expense.expenseType === 'Fixed' ? 'blue' : 'orange'}>
-                        {expense.expenseType === 'Fixed' ? 'Fast' : 'Rörlig'}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>{expense.isRecurring ? 'Ja' : 'Nej'}</Table.Td>
-                    <Table.Td ta="right">{formatSek(expense.amount)}</Table.Td>
-                    <Table.Td>
-                      <Group gap="xs" justify="flex-end">
-                        <ActionIcon variant="subtle" aria-label="Kopiera till nästa månad" onClick={() => handleCopy(expense)}>
-                          <IconCopy size={18} />
-                        </ActionIcon>
-                        <ActionIcon variant="subtle" aria-label="Redigera" onClick={() => openEdit(expense)}>
-                          <IconEdit size={18} />
-                        </ActionIcon>
-                        <ActionIcon variant="subtle" color="red" aria-label="Ta bort" onClick={() => setDeleteTarget(expense)}>
-                          <IconTrash size={18} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
+                    </>
+                  )
+                  return (
+                    <Table.Tr key={expense.id}>
+                      <Table.Td>
+                        {isLoan ? (
+                          <LoanQuickEdit expense={expense}>
+                            <Group gap={6} wrap="nowrap">
+                              <Text size="sm" fw={500}>{expense.name}</Text>
+                              <IconPencil size={14} color="var(--mantine-color-dimmed)" />
+                            </Group>
+                            {details}
+                          </LoanQuickEdit>
+                        ) : (
+                          <>
+                            {expense.name}
+                            {details}
+                          </>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs" wrap="nowrap">
+                          <CategoryDot color={categoryById.get(expense.categoryId)?.color} />
+                          {expense.categoryName}
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" color={expense.expenseType === 'Fixed' ? 'blue' : 'orange'}>
+                          {expense.expenseType === 'Fixed' ? 'Fast' : 'Rörlig'}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>{expense.isRecurring ? 'Ja' : 'Nej'}</Table.Td>
+                      <Table.Td ta="right">{formatSek(expense.amount)}</Table.Td>
+                      <Table.Td>
+                        <Group gap="xs" justify="flex-end">
+                          <ActionIcon variant="subtle" aria-label="Kopiera till nästa månad" onClick={() => handleCopy(expense)}>
+                            <IconCopy size={18} />
+                          </ActionIcon>
+                          <ActionIcon variant="subtle" aria-label="Redigera" onClick={() => openEdit(expense)}>
+                            <IconEdit size={18} />
+                          </ActionIcon>
+                          <ActionIcon variant="subtle" color="red" aria-label="Ta bort" onClick={() => setDeleteTarget(expense)}>
+                            <IconTrash size={18} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  )
+                })}
               </Table.Tbody>
               <Table.Tfoot>
                 <Table.Tr>
@@ -249,31 +295,85 @@ export function ExpensesPage() {
               ]}
             />
           </div>
-          <NumberInput
-            label={selectedCategory?.isLoan ? 'Totalt belopp (SEK, valfritt)' : 'Belopp (SEK)'}
-            description={selectedCategory?.isLoan ? 'Anges ett totalbelopp gäller det. Annars räknas ränta + amortering.' : undefined}
-            value={form.amount ?? ''}
-            onChange={(v) => setForm({ ...form, amount: v === '' ? null : Number(v) })}
-            min={0}
-            thousandSeparator=" "
-          />
-          {selectedCategory?.isLoan && (
+          {selectedCategory?.isLoan ? (
             <>
               <NumberInput
-                label="Ränta (SEK, valfritt)"
-                value={form.interestAmount ?? ''}
-                onChange={(v) => setForm({ ...form, interestAmount: v === '' ? null : Number(v) })}
+                label="Total skuld (SEK)"
+                description="Kvarvarande skuld denna månad. Med räntesats räknas räntan ut automatiskt."
+                value={form.loanBalance ?? ''}
+                onChange={(v) => setForm({ ...form, loanBalance: v === '' ? null : Number(v) })}
                 min={0}
                 thousandSeparator=" "
+                allowNegative={false}
               />
               <NumberInput
-                label="Amortering (SEK, valfritt)"
+                label="Räntesats (% per år)"
+                value={form.interestRatePercent ?? ''}
+                onChange={(v) => setForm({ ...form, interestRatePercent: v === '' ? null : Number(v) })}
+                min={0}
+                max={100}
+                decimalScale={3}
+                decimalSeparator=","
+                suffix=" %"
+                allowNegative={false}
+                error={loanIncomplete ? 'Ange både skuld och räntesats' : undefined}
+              />
+              <NumberInput
+                label="Amortering per månad (SEK)"
                 value={form.amortizationAmount ?? ''}
                 onChange={(v) => setForm({ ...form, amortizationAmount: v === '' ? null : Number(v) })}
                 min={0}
                 thousandSeparator=" "
+                allowNegative={false}
               />
+              {loanCalculated ? (
+                <Card withBorder padding="sm" radius="md">
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Ränta (beräknad)</Text>
+                    <Text size="sm" fw={500}>{formatSek(calculatedInterest!)}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Att betala denna månad</Text>
+                    <Text size="sm" fw={700}>{formatSek(calculatedInterest! + (form.amortizationAmount ?? 0))}</Text>
+                  </Group>
+                </Card>
+              ) : (
+                <>
+                  <NumberInput
+                    label="Ränta (SEK, valfritt)"
+                    description="Används bara om skuld och räntesats inte är ifyllda."
+                    value={form.interestAmount ?? ''}
+                    onChange={(v) => setForm({ ...form, interestAmount: v === '' ? null : Number(v) })}
+                    min={0}
+                    thousandSeparator=" "
+                  />
+                  <NumberInput
+                    label="Totalt belopp (SEK, valfritt)"
+                    description="Anges ett totalbelopp gäller det. Annars räknas ränta + amortering."
+                    value={form.amount ?? ''}
+                    onChange={(v) => setForm({ ...form, amount: v === '' ? null : Number(v) })}
+                    min={0}
+                    thousandSeparator=" "
+                  />
+                </>
+              )}
+              {loanCalculated && (
+                <LoanProjection
+                  start={{ year: form.year, month: form.month }}
+                  balance={form.loanBalance!}
+                  ratePercent={form.interestRatePercent!}
+                  amortization={form.amortizationAmount ?? 0}
+                />
+              )}
             </>
+          ) : (
+            <NumberInput
+              label="Belopp (SEK)"
+              value={form.amount ?? ''}
+              onChange={(v) => setForm({ ...form, amount: v === '' ? null : Number(v) })}
+              min={0}
+              thousandSeparator=" "
+            />
           )}
           <NumberInput
             label="Förfallodag (valfritt)"

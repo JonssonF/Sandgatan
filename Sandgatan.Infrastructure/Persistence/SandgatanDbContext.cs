@@ -31,6 +31,8 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
             entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.InterestAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.AmortizationAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.LoanBalance).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.InterestRatePercent).HasColumnType("decimal(6,3)");
             entity.HasIndex(e => new { e.Year, e.Month });
             entity.HasOne(e => e.Category)
                 .WithMany(c => c.Expenses)

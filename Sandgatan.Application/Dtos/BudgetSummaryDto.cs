@@ -15,6 +15,9 @@ public class BudgetSummaryDto
     /// <summary>Total of all expenses in loan categories (already included in TotalExpenses).</summary>
     public decimal TotalLoans { get; set; }
 
+    /// <summary>Sum of remaining debt on loans that have a balance entered.</summary>
+    public decimal TotalLoanBalance { get; set; }
+
     /// <summary>Sum of interest entered on loans. Loans with only a total contribute nothing here.</summary>
     public decimal TotalLoanInterest { get; set; }
 

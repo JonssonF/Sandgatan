@@ -6,9 +6,11 @@ interface LoanCardProps {
   total: number
   interest: number
   amortization: number
+  /** Total remaining debt across loans with a balance entered. */
+  balance: number
 }
 
-export function LoanCard({ total, interest, amortization }: LoanCardProps) {
+export function LoanCard({ total, interest, amortization, balance }: LoanCardProps) {
   const unspecified = total - interest - amortization
 
   return (
@@ -34,6 +36,12 @@ export function LoanCard({ total, interest, amortization }: LoanCardProps) {
         <Group justify="space-between">
           <Text size="sm" c="dimmed">Utan uppdelning</Text>
           <Text size="sm" fw={500}>{formatSek(unspecified)}</Text>
+        </Group>
+      )}
+      {balance > 0 && (
+        <Group justify="space-between" mt={6} pt={6} style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+          <Text size="sm" c="dimmed">Total skuld</Text>
+          <Text size="sm" fw={600}>{formatSek(balance)}</Text>
         </Group>
       )}
     </Card>

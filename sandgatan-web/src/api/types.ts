@@ -31,6 +31,8 @@ export interface ExpenseDto {
   amount: number
   interestAmount?: number | null
   amortizationAmount?: number | null
+  loanBalance?: number | null
+  interestRatePercent?: number | null
   categoryId: number
   categoryName: string
   expenseType: ExpenseType
@@ -47,6 +49,10 @@ export interface UpsertExpenseDto {
   amount: number | null
   interestAmount?: number | null
   amortizationAmount?: number | null
+  /** Remaining debt. With interestRatePercent, the backend calculates the interest. */
+  loanBalance?: number | null
+  /** Annual interest rate in percent. */
+  interestRatePercent?: number | null
   categoryId: number
   expenseType: ExpenseType
   month: number
@@ -106,6 +112,7 @@ export interface BudgetSummaryDto {
   totalExpenses: number
   totalSavings: number
   totalLoans: number
+  totalLoanBalance: number
   totalLoanInterest: number
   totalLoanAmortization: number
   remainingAfterExpenses: number
