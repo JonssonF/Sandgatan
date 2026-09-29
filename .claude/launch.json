@@ -2,10 +2,17 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "sandgatan-api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Sandgatan.Api", "--launch-profile", "http"],
+      "port": 5043,
+      "url": "http://localhost:5043"
+    },
+    {
       "name": "sandgatan-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "sandgatan-web", "run", "dev", "--", "--host"],
-      "port": 5173
+      "runtimeArgs": ["--prefix", "sandgatan-web", "run", "dev", "--", "--host", "--port", "5174", "--strictPort"],
+      "port": 5174
     }
   ]
 }
