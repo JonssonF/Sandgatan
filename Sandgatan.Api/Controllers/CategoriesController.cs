@@ -31,7 +31,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         {
             DeleteCategoryResult.Deleted => NoContent(),
             DeleteCategoryResult.NotFound => NotFound(),
-            DeleteCategoryResult.InUse => Conflict(new { message = "Kategorin används av en eller flera utgifter och kan inte tas bort." }),
+            DeleteCategoryResult.InUse => Conflict(new { message = "Kategorin används av en eller flera poster och kan inte tas bort." }),
             _ => StatusCode(500)
         };
     }

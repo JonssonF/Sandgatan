@@ -20,7 +20,8 @@ public class CategoryService(ICategoryRepository repository) : ICategoryService
             Name = dto.Name,
             Color = dto.Color,
             Icon = dto.Icon,
-            IsLoan = dto.IsLoan
+            IsLoan = dto.Type == Domain.Enums.CategoryType.Expense && dto.IsLoan,
+            Type = dto.Type
         };
         category = await repository.AddAsync(category, ct);
         return ToDto(category);
@@ -34,7 +35,7 @@ public class CategoryService(ICategoryRepository repository) : ICategoryService
         category.Name = dto.Name;
         category.Color = dto.Color;
         category.Icon = dto.Icon;
-        category.IsLoan = dto.IsLoan;
+        category.IsLoan = category.Type == Domain.Enums.CategoryType.Expense && dto.IsLoan;
 
         await repository.UpdateAsync(category, ct);
         return true;
@@ -58,6 +59,7 @@ public class CategoryService(ICategoryRepository repository) : ICategoryService
         Name = category.Name,
         Color = category.Color,
         Icon = category.Icon,
-        IsLoan = category.IsLoan
+        IsLoan = category.IsLoan,
+        Type = category.Type
     };
 }

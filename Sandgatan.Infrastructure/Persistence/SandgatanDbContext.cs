@@ -9,6 +9,7 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Saving> Savings => Set<Saving>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<InitializedMonth> InitializedMonths => Set<InitializedMonth>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -18,6 +19,10 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
             entity.Property(i => i.Person).IsRequired().HasMaxLength(100);
             entity.Property(i => i.Amount).HasColumnType("decimal(18,2)");
             entity.HasIndex(i => new { i.Year, i.Month });
+            entity.HasOne(i => i.Category)
+                .WithMany(c => c.Incomes)
+                .HasForeignKey(i => i.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Expense>(entity =>
@@ -44,7 +49,13 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
         modelBuilder.Entity<Category>(entity =>
         {
             entity.Property(c => c.Name).IsRequired().HasMaxLength(100);
-            entity.HasIndex(c => c.Name).IsUnique();
+            // Same name may exist once per type, e.g. "Övrigt" for both expenses and incomes.
+            entity.HasIndex(c => new { c.Type, c.Name }).IsUnique();
+        });
+
+        modelBuilder.Entity<InitializedMonth>(entity =>
+        {
+            entity.HasIndex(m => new { m.Year, m.Month }).IsUnique();
         });
     }
 }

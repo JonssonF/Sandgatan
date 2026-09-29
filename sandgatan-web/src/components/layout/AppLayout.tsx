@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom'
+import { MonthAutoInit } from '../MonthAutoInit'
 import { MonthSwitcher } from '../MonthSwitcher'
 import { BackendOfflineBanner } from './BackendOfflineBanner'
 
@@ -73,6 +74,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <AppShell.Main>
         <BackendOfflineBanner />
+        <MonthAutoInit />
         {children}
       </AppShell.Main>
     </AppShell>

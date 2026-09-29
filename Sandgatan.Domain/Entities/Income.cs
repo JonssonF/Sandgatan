@@ -7,6 +7,8 @@ public class Income
     public string Name { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Person { get; set; } = string.Empty;
+    public int? CategoryId { get; set; }
+    public Category? Category { get; set; }
     public int Month { get; set; }
     public int Year { get; set; }
     public bool IsRecurring { get; set; }

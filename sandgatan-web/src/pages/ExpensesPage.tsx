@@ -30,6 +30,8 @@ import {
   useUpdateExpense,
 } from '../api/expenses'
 import type { ExpenseDto, ExpenseType, UpsertExpenseDto } from '../api/types'
+import { CategoryDot } from '../components/CategoryDot'
+import { CategoryModal } from '../components/CategoryModal'
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
 import { formatSek } from '../lib/format'
@@ -62,6 +64,7 @@ export function ExpensesPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<UpsertExpenseDto>(emptyForm(year, month))
   const [deleteTarget, setDeleteTarget] = useState<ExpenseDto | null>(null)
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 
   useEffect(() => {
     if ((location.state as { openAdd?: boolean } | null)?.openAdd) {
@@ -131,7 +134,8 @@ export function ExpensesPage() {
 
   const total = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0
   const selectedCategory = categories?.find((c) => c.id === form.categoryId)
-  const categoryOptions = (categories ?? []).map((c) => ({ value: String(c.id), label: c.name }))
+  const categoryOptions = (categories ?? []).filter((c) => c.type === 'Expense').map((c) => ({ value: String(c.id), label: c.name }))
+  const categoryById = new Map((categories ?? []).map((c) => [c.id, c]))
 
   return (
     <Stack gap="lg">
@@ -169,7 +173,12 @@ export function ExpensesPage() {
                         </Text>
                       )}
                     </Table.Td>
-                    <Table.Td>{expense.categoryName}</Table.Td>
+                    <Table.Td>
+                      <Group gap="xs" wrap="nowrap">
+                        <CategoryDot color={categoryById.get(expense.categoryId)?.color} />
+                        {expense.categoryName}
+                      </Group>
+                    </Table.Td>
                     <Table.Td>
                       <Badge variant="light" color={expense.expenseType === 'Fixed' ? 'blue' : 'orange'}>
                         {expense.expenseType === 'Fixed' ? 'Fast' : 'Rörlig'}
@@ -214,8 +223,20 @@ export function ExpensesPage() {
             data={categoryOptions}
             value={form.categoryId ? String(form.categoryId) : null}
             onChange={(value) => setForm({ ...form, categoryId: value ? Number(value) : 0 })}
+            searchable
+            nothingFoundMessage="Ingen kategori matchar"
             required
           />
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            leftSection={<IconPlus size={14} />}
+            onClick={() => setCategoryModalOpen(true)}
+            style={{ alignSelf: 'flex-start' }}
+            mt={-6}
+          >
+            Ny kategori
+          </Button>
           <div>
             <Text size="sm" fw={500} mb={4}>Typ</Text>
             <SegmentedControl
@@ -269,6 +290,14 @@ export function ExpensesPage() {
           </Group>
         </Stack>
       </Drawer>
+
+      <CategoryModal
+        opened={categoryModalOpen}
+        category={null}
+        type="Expense"
+        onClose={() => setCategoryModalOpen(false)}
+        onSaved={(created) => setForm((f) => ({ ...f, categoryId: created.id }))}
+      />
 
       <ConfirmDeleteModal
         opened={!!deleteTarget}

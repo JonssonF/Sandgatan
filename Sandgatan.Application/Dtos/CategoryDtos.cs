@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Sandgatan.Domain.Enums;
 
 namespace Sandgatan.Application.Dtos;
 
@@ -9,6 +10,7 @@ public class CategoryDto
     public string? Color { get; set; }
     public string? Icon { get; set; }
     public bool IsLoan { get; set; }
+    public CategoryType Type { get; set; }
 }
 
 public class UpsertCategoryDto
@@ -23,4 +25,7 @@ public class UpsertCategoryDto
     public string? Icon { get; set; }
 
     public bool IsLoan { get; set; }
+
+    /// <summary>Only used on create — a category never changes type afterwards.</summary>
+    public CategoryType Type { get; set; }
 }

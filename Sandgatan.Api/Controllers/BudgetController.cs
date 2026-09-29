@@ -15,4 +15,9 @@ public class BudgetController(IBudgetSummaryService summaryService, IRecurringCo
     [HttpPost("{year:int}/{month:int}/copy-recurring")]
     public async Task<ActionResult<CopyRecurringResultDto>> CopyRecurring(int year, int month, CancellationToken ct)
         => Ok(await recurringCopyService.CopyRecurringFromPreviousMonthAsync(year, month, ct));
+
+    /// <summary>Called by the frontend whenever a month is opened — carries recurring entries over automatically.</summary>
+    [HttpPost("{year:int}/{month:int}/ensure-initialized")]
+    public async Task<ActionResult<CopyRecurringResultDto>> EnsureInitialized(int year, int month, CancellationToken ct)
+        => Ok(await recurringCopyService.EnsureMonthInitializedAsync(year, month, DateOnly.FromDateTime(DateTime.Today), ct));
 }

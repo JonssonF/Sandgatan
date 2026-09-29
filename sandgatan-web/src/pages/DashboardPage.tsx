@@ -1,6 +1,8 @@
 import { Button, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import {
+  IconCircleCheck,
   IconCoin,
+  IconInfoCircle,
   IconPigMoney,
   IconReceipt2,
   IconReceiptOff,
@@ -11,9 +13,14 @@ import { useNavigate } from 'react-router-dom'
 import { useBudgetSummary } from '../api/budget'
 import { CompactOverview } from '../components/CompactOverview'
 import { DistributionBar } from '../components/DistributionBar'
+import { ExpensesByCategoryChart } from '../components/ExpensesByCategoryChart'
 import { LoanCard } from '../components/LoanCard'
 import { SummaryCard } from '../components/SummaryCard'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
+import { formatSek } from '../lib/format'
+
+/** Common rule of thumb: save at least 10% of household income. */
+const RECOMMENDED_SAVINGS_RATE = 10
 
 export function DashboardPage() {
   const { year, month } = useBudgetPeriod()
@@ -56,15 +63,44 @@ export function DashboardPage() {
 
           <DistributionBar fixed={data.totalFixedExpenses} variable={data.totalVariableExpenses} savings={data.totalSavings} />
 
-          <Group gap="xl">
-            <Text size="sm" c="dimmed">Sparkvot: <b>{data.savingsRatePercent}%</b> av inkomsten</Text>
-            <Text size="sm" c="dimmed">Utgiftskvot: <b>{data.expenseRatePercent}%</b> av inkomsten</Text>
-          </Group>
+          <ExpensesByCategoryChart year={year} month={month} />
+
+          <Stack gap={6}>
+            <Group gap="xl">
+              <Text size="sm" c="dimmed">Sparkvot: <b>{data.savingsRatePercent}%</b> av inkomsten</Text>
+              <Text size="sm" c="dimmed">Utgiftskvot: <b>{data.expenseRatePercent}%</b> av inkomsten</Text>
+            </Group>
+            <RecommendedSavings income={data.totalIncome} savings={data.totalSavings} />
+          </Stack>
 
           <Title order={3}>Alla poster</Title>
           <CompactOverview year={year} month={month} />
         </>
       )}
     </Stack>
+  )
+}
+
+function RecommendedSavings({ income, savings }: { income: number; savings: number }) {
+  if (income <= 0) return null
+  const recommended = Math.round((income * RECOMMENDED_SAVINGS_RATE) / 100)
+  const reached = savings >= recommended
+
+  return (
+    <Group gap="xl" wrap="wrap">
+      <Text size="sm" c="dimmed">
+        Rekommenderad sparkvot: <b>{RECOMMENDED_SAVINGS_RATE}%</b> = <b>{formatSek(recommended)}</b> per månad
+      </Text>
+      <Group gap={4} wrap="nowrap">
+        {reached
+          ? <IconCircleCheck size={16} color="var(--mantine-color-teal-6)" aria-hidden />
+          : <IconInfoCircle size={16} color="var(--mantine-color-dimmed)" aria-hidden />}
+        <Text size="sm" c="dimmed">
+          {reached
+            ? <>Ni når rekommendationen{savings > recommended && <> med <b>{formatSek(savings - recommended)}</b> över</>}</>
+            : <><b>{formatSek(recommended - savings)}</b> kvar till {RECOMMENDED_SAVINGS_RATE}%</>}
+        </Text>
+      </Group>
+    </Group>
   )
 }

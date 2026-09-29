@@ -27,13 +27,15 @@ public class IncomeService(IIncomeRepository repository) : IIncomeService
             Name = dto.Name,
             Amount = dto.Amount,
             Person = dto.Person,
+            CategoryId = dto.CategoryId,
             Month = dto.Month,
             Year = dto.Year,
             IsRecurring = dto.IsRecurring,
             Notes = dto.Notes
         };
         income = await repository.AddAsync(income, ct);
-        return ToDto(income);
+        var saved = await repository.GetByIdAsync(income.Id, ct);
+        return ToDto(saved!);
     }
 
     public async Task<bool> UpdateAsync(int id, UpsertIncomeDto dto, CancellationToken ct = default)
@@ -44,6 +46,7 @@ public class IncomeService(IIncomeRepository repository) : IIncomeService
         income.Name = dto.Name;
         income.Amount = dto.Amount;
         income.Person = dto.Person;
+        income.CategoryId = dto.CategoryId;
         income.Month = dto.Month;
         income.Year = dto.Year;
         income.IsRecurring = dto.IsRecurring;
@@ -73,13 +76,15 @@ public class IncomeService(IIncomeRepository repository) : IIncomeService
             Name = income.Name,
             Amount = income.Amount,
             Person = income.Person,
+            CategoryId = income.CategoryId,
             Month = month,
             Year = year,
             IsRecurring = income.IsRecurring,
             Notes = income.Notes
         };
         copy = await repository.AddAsync(copy, ct);
-        return ToDto(copy);
+        var saved = await repository.GetByIdAsync(copy.Id, ct);
+        return ToDto(saved!);
     }
 
     private static IncomeDto ToDto(Income income) => new()
@@ -88,6 +93,8 @@ public class IncomeService(IIncomeRepository repository) : IIncomeService
         Name = income.Name,
         Amount = income.Amount,
         Person = income.Person,
+        CategoryId = income.CategoryId,
+        CategoryName = income.Category?.Name,
         Month = income.Month,
         Year = income.Year,
         IsRecurring = income.IsRecurring,

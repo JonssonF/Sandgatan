@@ -1,10 +1,13 @@
 export type ExpenseType = 'Fixed' | 'Variable'
+export type CategoryType = 'Expense' | 'Income'
 
 export interface IncomeDto {
   id: number
   name: string
   amount: number
   person: string
+  categoryId?: number | null
+  categoryName?: string | null
   month: number
   year: number
   isRecurring: boolean
@@ -15,6 +18,7 @@ export interface UpsertIncomeDto {
   name: string
   amount: number
   person: string
+  categoryId?: number | null
   month: number
   year: number
   isRecurring: boolean
@@ -81,6 +85,7 @@ export interface CategoryDto {
   color?: string | null
   icon?: string | null
   isLoan: boolean
+  type: CategoryType
 }
 
 export interface UpsertCategoryDto {
@@ -88,6 +93,8 @@ export interface UpsertCategoryDto {
   color?: string | null
   icon?: string | null
   isLoan: boolean
+  /** Only used on create — a category never changes type. */
+  type: CategoryType
 }
 
 export interface BudgetSummaryDto {

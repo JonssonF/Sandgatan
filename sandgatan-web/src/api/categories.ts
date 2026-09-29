@@ -23,7 +23,12 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, dto }: { id: number; dto: UpsertCategoryDto }) => api.put<void>(`/categories/${id}`, dto),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: key })
+      // Lists show the category name, so a rename must refresh them too.
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    },
   })
 }
 

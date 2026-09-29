@@ -10,3 +10,19 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Clickable row that opens the quick amount editor (IncomeQuickEdit). */
+.quick-edit-trigger {
+  display: block;
+  width: 100%;
+  margin: -4px -8px;
+  padding: 4px 8px;
+  box-sizing: content-box;
+  border-radius: var(--mantine-radius-sm);
+  transition: background-color 120ms;
+}
+
+.quick-edit-trigger:hover,
+.quick-edit-trigger:focus-visible {
+  background-color: var(--mantine-color-default-hover);
+}

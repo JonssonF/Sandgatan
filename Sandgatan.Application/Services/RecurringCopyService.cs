@@ -8,8 +8,38 @@ namespace Sandgatan.Application.Services;
 public class RecurringCopyService(
     IIncomeRepository incomeRepository,
     IExpenseRepository expenseRepository,
-    ISavingRepository savingRepository) : IRecurringCopyService
+    ISavingRepository savingRepository,
+    IInitializedMonthRepository initializedMonthRepository) : IRecurringCopyService
 {
+    public async Task<CopyRecurringResultDto> EnsureMonthInitializedAsync(int year, int month, DateOnly today, CancellationToken ct = default)
+    {
+        var none = new CopyRecurringResultDto();
+        if (await initializedMonthRepository.IsInitializedAsync(year, month, ct)) return none;
+
+        var (limitYear, limitMonth) = MonthMath.Next(today.Year, today.Month);
+        if (year * 12 + month > limitYear * 12 + limitMonth) return none;
+
+        var hasEntries = (await incomeRepository.GetByMonthAsync(year, month, ct)).Count > 0
+            || (await expenseRepository.GetByMonthAsync(year, month, ct)).Count > 0
+            || (await savingRepository.GetByMonthAsync(year, month, ct)).Count > 0;
+        if (hasEntries)
+        {
+            await initializedMonthRepository.MarkInitializedAsync(year, month, ct);
+            return none;
+        }
+
+        var (prevYear, prevMonth) = MonthMath.Previous(year, month);
+        var previousHasRecurring = (await incomeRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Any(i => i.IsRecurring)
+            || (await expenseRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Any(e => e.IsRecurring)
+            || (await savingRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Any(s => s.IsRecurring);
+        // Nothing to carry over yet — leave the month unmarked so it can be initialized later.
+        if (!previousHasRecurring) return none;
+
+        var result = await CopyRecurringFromPreviousMonthAsync(year, month, ct);
+        await initializedMonthRepository.MarkInitializedAsync(year, month, ct);
+        return result;
+    }
+
     public async Task<CopyRecurringResultDto> CopyRecurringFromPreviousMonthAsync(int year, int month, CancellationToken ct = default)
     {
         var (prevYear, prevMonth) = MonthMath.Previous(year, month);
@@ -36,6 +66,7 @@ public class RecurringCopyService(
                 Name = income.Name,
                 Amount = income.Amount,
                 Person = income.Person,
+                CategoryId = income.CategoryId,
                 Month = month,
                 Year = year,
                 IsRecurring = income.IsRecurring,

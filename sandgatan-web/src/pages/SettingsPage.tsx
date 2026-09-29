@@ -3,63 +3,47 @@ import {
   Badge,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
+  SimpleGrid,
   Stack,
-  Switch,
   Table,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconEdit, IconPlus, IconRefresh, IconTrash } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useCopyRecurring } from '../api/budget'
-import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '../api/categories'
-import type { CategoryDto, UpsertCategoryDto } from '../api/types'
+import { useCategories, useDeleteCategory } from '../api/categories'
+import type { CategoryDto, CategoryType } from '../api/types'
+import { CategoryDot } from '../components/CategoryDot'
+import { CategoryModal } from '../components/CategoryModal'
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
 import { MONTH_NAMES_SV } from '../lib/month'
 
-const emptyForm: UpsertCategoryDto = { name: '', color: null, icon: null, isLoan: false }
-
 export function SettingsPage() {
   const { year, month } = useBudgetPeriod()
   const { data: categories, isLoading } = useCategories()
-  const createCategory = useCreateCategory()
-  const updateCategory = useUpdateCategory()
   const deleteCategory = useDeleteCategory()
   const copyRecurring = useCopyRecurring(year, month)
 
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [form, setForm] = useState<UpsertCategoryDto>(emptyForm)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<CategoryType>('Expense')
+  const [editing, setEditing] = useState<CategoryDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CategoryDto | null>(null)
 
-  function openCreate() {
-    setEditingId(null)
-    setForm(emptyForm)
-    setDrawerOpen(true)
+  function openCreate(type: CategoryType) {
+    setEditing(null)
+    setModalType(type)
+    setModalOpen(true)
   }
 
   function openEdit(category: CategoryDto) {
-    setEditingId(category.id)
-    setForm({ name: category.name, color: category.color, icon: category.icon, isLoan: category.isLoan })
-    setDrawerOpen(true)
-  }
-
-  async function handleSave() {
-    if (!form.name.trim()) return
-    if (editingId) {
-      await updateCategory.mutateAsync({ id: editingId, dto: form })
-      notifications.show({ message: 'Kategorin uppdaterades', color: 'teal' })
-    } else {
-      await createCategory.mutateAsync(form)
-      notifications.show({ message: 'Kategorin lades till', color: 'teal' })
-    }
-    setDrawerOpen(false)
+    setEditing(category)
+    setModalType(category.type)
+    setModalOpen(true)
   }
 
   async function handleDelete() {
@@ -69,7 +53,7 @@ export function SettingsPage() {
       notifications.show({ message: 'Kategorin togs bort', color: 'teal' })
     } else {
       notifications.show({
-        message: 'Kategorin används av utgifter och kan inte tas bort.',
+        message: 'Kategorin används av en eller flera poster och kan inte tas bort.',
         color: 'red',
       })
     }
@@ -84,6 +68,8 @@ export function SettingsPage() {
     })
   }
 
+  const listProps = { isLoading, onCreate: openCreate, onEdit: openEdit, onDelete: setDeleteTarget }
+
   return (
     <Stack gap="xl">
       <Title order={2}>Inställningar</Title>
@@ -91,7 +77,8 @@ export function SettingsPage() {
       <Card withBorder padding="lg" radius="md">
         <Title order={4} mb="xs">Månadshantering</Title>
         <Text size="sm" c="dimmed" mb="md">
-          Kopiera alla återkommande inkomster, utgifter och sparanden från föregående månad till{' '}
+          Återkommande poster förs över automatiskt när en ny månad öppnas första gången. Vill du fylla på i efterhand
+          kan du kopiera alla återkommande inkomster, utgifter och sparanden från föregående månad till{' '}
           {MONTH_NAMES_SV[month - 1]} {year}. Poster med samma namn som redan finns i månaden hoppas över.
         </Text>
         <Button leftSection={<IconRefresh size={18} />} onClick={handleCopyRecurring} loading={copyRecurring.isPending} variant="light">
@@ -99,57 +86,22 @@ export function SettingsPage() {
         </Button>
       </Card>
 
-      <Card withBorder padding="lg" radius="md">
-        <Group justify="space-between" mb="md">
-          <Title order={4}>Kategorier</Title>
-          <Button leftSection={<IconPlus size={18} />} onClick={openCreate} size="sm">Ny kategori</Button>
-        </Group>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+        <CategoryListCard
+          title="Utgiftskategorier"
+          type="Expense"
+          categories={categories?.filter((c) => c.type === 'Expense')}
+          {...listProps}
+        />
+        <CategoryListCard
+          title="Inkomstkategorier"
+          type="Income"
+          categories={categories?.filter((c) => c.type === 'Income')}
+          {...listProps}
+        />
+      </SimpleGrid>
 
-        {isLoading ? (
-          <Group justify="center" py="xl"><Loader /></Group>
-        ) : !categories || categories.length === 0 ? (
-          <Text c="dimmed">Inga kategorier ännu.</Text>
-        ) : (
-          <Table verticalSpacing="sm">
-            <Table.Tbody>
-              {categories.map((category) => (
-                <Table.Tr key={category.id}>
-                  <Table.Td>
-                    {category.name}
-                    {category.isLoan && <Badge ml="sm" variant="light">Lån</Badge>}
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap="xs" justify="flex-end">
-                      <ActionIcon variant="subtle" aria-label="Redigera" onClick={() => openEdit(category)}>
-                        <IconEdit size={18} />
-                      </ActionIcon>
-                      <ActionIcon variant="subtle" color="red" aria-label="Ta bort" onClick={() => setDeleteTarget(category)}>
-                        <IconTrash size={18} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Card>
-
-      <Drawer opened={drawerOpen} onClose={() => setDrawerOpen(false)} title={editingId ? 'Redigera kategori' : 'Ny kategori'} position="right">
-        <Stack gap="sm">
-          <TextInput label="Namn" placeholder="t.ex. Boende" value={form.name} onChange={(e) => setForm({ ...form, name: e.currentTarget.value })} required />
-          <Switch
-            label="Lånekategori"
-            description="Utgifter i kategorin får fälten ränta och amortering, och summeras som lån på översikten."
-            checked={form.isLoan}
-            onChange={(e) => setForm({ ...form, isLoan: e.currentTarget.checked })}
-          />
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={() => setDrawerOpen(false)}>Avbryt</Button>
-            <Button onClick={handleSave} loading={createCategory.isPending || updateCategory.isPending}>Spara</Button>
-          </Group>
-        </Stack>
-      </Drawer>
+      <CategoryModal opened={modalOpen} category={editing} type={modalType} onClose={() => setModalOpen(false)} />
 
       <ConfirmDeleteModal
         opened={!!deleteTarget}
@@ -159,5 +111,58 @@ export function SettingsPage() {
         onConfirm={handleDelete}
       />
     </Stack>
+  )
+}
+
+interface CategoryListCardProps {
+  title: string
+  type: CategoryType
+  categories: CategoryDto[] | undefined
+  isLoading: boolean
+  onCreate: (type: CategoryType) => void
+  onEdit: (category: CategoryDto) => void
+  onDelete: (category: CategoryDto) => void
+}
+
+function CategoryListCard({ title, type, categories, isLoading, onCreate, onEdit, onDelete }: CategoryListCardProps) {
+  return (
+    <Card withBorder padding="lg" radius="md">
+      <Group justify="space-between" mb="md">
+        <Title order={4}>{title}</Title>
+        <Button leftSection={<IconPlus size={18} />} onClick={() => onCreate(type)} size="sm">Ny kategori</Button>
+      </Group>
+
+      {isLoading ? (
+        <Group justify="center" py="xl"><Loader /></Group>
+      ) : !categories || categories.length === 0 ? (
+        <Text c="dimmed">Inga kategorier ännu.</Text>
+      ) : (
+        <Table verticalSpacing="sm">
+          <Table.Tbody>
+            {categories.map((category) => (
+              <Table.Tr key={category.id}>
+                <Table.Td>
+                  <Group gap="xs" wrap="nowrap">
+                    <CategoryDot color={category.color} />
+                    {category.name}
+                    {category.isLoan && <Badge variant="light">Lån</Badge>}
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group gap="xs" justify="flex-end">
+                    <ActionIcon variant="subtle" aria-label="Redigera" onClick={() => onEdit(category)}>
+                      <IconEdit size={18} />
+                    </ActionIcon>
+                    <ActionIcon variant="subtle" color="red" aria-label="Ta bort" onClick={() => onDelete(category)}>
+                      <IconTrash size={18} />
+                    </ActionIcon>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
+    </Card>
   )
 }
