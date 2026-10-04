@@ -8,18 +8,25 @@ namespace Sandgatan.Application.Services;
 public class BudgetSummaryService(
     IIncomeRepository incomeRepository,
     IExpenseRepository expenseRepository,
-    ISavingRepository savingRepository) : IBudgetSummaryService
+    ISavingRepository savingRepository,
+    IPurchaseRepository purchaseRepository,
+    ISpendingBudgetRepository spendingBudgetRepository) : IBudgetSummaryService
 {
     public async Task<BudgetSummaryDto> GetSummaryAsync(int year, int month, CancellationToken ct = default)
     {
         var incomes = await incomeRepository.GetByMonthAsync(year, month, ct);
         var expenses = await expenseRepository.GetByMonthAsync(year, month, ct);
         var savings = await savingRepository.GetByMonthAsync(year, month, ct);
+        var purchases = await purchaseRepository.GetByMonthAsync(year, month, ct);
+        var spendingBudget = (await spendingBudgetRepository.GetEffectiveAsync(year, month, ct))?.Amount;
 
         var totalIncome = incomes.Sum(i => i.Amount);
         var totalFixedExpenses = expenses.Where(e => e.ExpenseType == ExpenseType.Fixed).Sum(e => e.Amount);
         var totalVariableExpenses = expenses.Where(e => e.ExpenseType == ExpenseType.Variable).Sum(e => e.Amount);
-        var totalExpenses = totalFixedExpenses + totalVariableExpenses;
+        var totalPurchases = purchases.Sum(p => p.Amount);
+        // The budget is what's planned; once purchases exceed it, the actual amount counts.
+        var plannedPurchases = Math.Max(spendingBudget ?? 0, totalPurchases);
+        var totalExpenses = totalFixedExpenses + totalVariableExpenses + plannedPurchases;
         var totalSavings = savings.Sum(s => s.Amount);
 
         var loans = expenses.Where(e => e.Category?.IsLoan == true).ToList();
@@ -41,6 +48,9 @@ public class BudgetSummaryService(
             TotalIncome = totalIncome,
             TotalFixedExpenses = totalFixedExpenses,
             TotalVariableExpenses = totalVariableExpenses,
+            TotalPurchases = totalPurchases,
+            SpendingBudget = spendingBudget,
+            PlannedPurchases = plannedPurchases,
             TotalExpenses = totalExpenses,
             TotalSavings = totalSavings,
             TotalLoans = totalLoans,

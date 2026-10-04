@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sandgatan.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using Sandgatan.Infrastructure.Persistence;
 namespace Sandgatan.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SandgatanDbContext))]
-    partial class SandgatanDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261004131814_AddPurchasesAndSpendingBudget")]
+    partial class AddPurchasesAndSpendingBudget
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");

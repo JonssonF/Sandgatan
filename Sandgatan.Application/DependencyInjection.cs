@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IBudgetSummaryService, BudgetSummaryService>();
         services.AddScoped<IRecurringCopyService, RecurringCopyService>();
+        services.AddScoped<IPurchaseService, PurchaseService>();
         return services;
     }
 }

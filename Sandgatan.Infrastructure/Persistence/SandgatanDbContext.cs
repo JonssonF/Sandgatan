@@ -10,6 +10,8 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
     public DbSet<Saving> Savings => Set<Saving>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<InitializedMonth> InitializedMonths => Set<InitializedMonth>();
+    public DbSet<Purchase> Purchases => Set<Purchase>();
+    public DbSet<SpendingBudget> SpendingBudgets => Set<SpendingBudget>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,6 +60,23 @@ public class SandgatanDbContext(DbContextOptions<SandgatanDbContext> options) : 
         modelBuilder.Entity<InitializedMonth>(entity =>
         {
             entity.HasIndex(m => new { m.Year, m.Month }).IsUnique();
+        });
+
+        modelBuilder.Entity<Purchase>(entity =>
+        {
+            entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
+            entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
+            entity.HasIndex(p => new { p.Year, p.Month });
+            entity.HasOne(p => p.Category)
+                .WithMany(c => c.Purchases)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SpendingBudget>(entity =>
+        {
+            entity.Property(b => b.Amount).HasColumnType("decimal(18,2)");
+            entity.HasIndex(b => new { b.Year, b.Month }).IsUnique();
         });
     }
 }

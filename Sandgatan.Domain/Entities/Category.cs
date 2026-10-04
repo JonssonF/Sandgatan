@@ -16,4 +16,5 @@ public class Category
 
     public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
     public ICollection<Income> Incomes { get; set; } = new List<Income>();
+    public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
 }

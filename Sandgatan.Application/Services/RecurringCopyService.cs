@@ -44,22 +44,35 @@ public class RecurringCopyService(
     {
         var (prevYear, prevMonth) = MonthMath.Previous(year, month);
 
-        var result = new CopyRecurringResultDto
+        return new CopyRecurringResultDto
         {
-            IncomesCopied = await CopyIncomesAsync(prevYear, prevMonth, year, month, ct),
-            ExpensesCopied = await CopyExpensesAsync(prevYear, prevMonth, year, month, ct),
-            SavingsCopied = await CopySavingsAsync(prevYear, prevMonth, year, month, ct)
+            IncomesCopied = await CopyIncomesAsync(prevYear, prevMonth, year, month, i => i.IsRecurring, ct),
+            ExpensesCopied = await CopyExpensesAsync(prevYear, prevMonth, year, month, e => e.IsRecurring, ct),
+            SavingsCopied = await CopySavingsAsync(prevYear, prevMonth, year, month, s => s.IsRecurring, ct)
         };
-        return result;
     }
 
-    private async Task<int> CopyIncomesAsync(int prevYear, int prevMonth, int year, int month, CancellationToken ct)
+    public async Task<CopyRecurringResultDto> CopyToNextMonthAsync(int year, int month, CopyToNextMonthRequestDto? selection, CancellationToken ct = default)
     {
-        var previous = (await incomeRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Where(i => i.IsRecurring).ToList();
+        var (nextYear, nextMonth) = MonthMath.Next(year, month);
+        return new CopyRecurringResultDto
+        {
+            IncomesCopied = await CopyIncomesAsync(year, month, nextYear, nextMonth, i => IsSelected(selection?.IncomeIds, i.Id), ct),
+            ExpensesCopied = await CopyExpensesAsync(year, month, nextYear, nextMonth, e => IsSelected(selection?.ExpenseIds, e.Id), ct),
+            SavingsCopied = await CopySavingsAsync(year, month, nextYear, nextMonth, s => IsSelected(selection?.SavingIds, s.Id), ct)
+        };
+    }
+
+    /// <summary>No selection list means "everything".</summary>
+    private static bool IsSelected(IReadOnlyCollection<int>? ids, int id) => ids is null || ids.Contains(id);
+
+    private async Task<int> CopyIncomesAsync(int fromYear, int fromMonth, int year, int month, Func<Income, bool> include, CancellationToken ct)
+    {
+        var previous = (await incomeRepository.GetByMonthAsync(fromYear, fromMonth, ct)).Where(include).ToList();
         var existingNames = (await incomeRepository.GetByMonthAsync(year, month, ct)).Select(i => i.Name).ToHashSet();
 
         var copied = 0;
-        foreach (var income in previous.Where(i => !existingNames.Contains(i.Name)))
+        foreach (var income in previous.Where(i => existingNames.Add(i.Name)))
         {
             await incomeRepository.AddAsync(new Income
             {
@@ -77,13 +90,13 @@ public class RecurringCopyService(
         return copied;
     }
 
-    private async Task<int> CopyExpensesAsync(int prevYear, int prevMonth, int year, int month, CancellationToken ct)
+    private async Task<int> CopyExpensesAsync(int fromYear, int fromMonth, int year, int month, Func<Expense, bool> include, CancellationToken ct)
     {
-        var previous = (await expenseRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Where(e => e.IsRecurring).ToList();
+        var previous = (await expenseRepository.GetByMonthAsync(fromYear, fromMonth, ct)).Where(include).ToList();
         var existingNames = (await expenseRepository.GetByMonthAsync(year, month, ct)).Select(e => e.Name).ToHashSet();
 
         var copied = 0;
-        foreach (var expense in previous.Where(e => !existingNames.Contains(e.Name)))
+        foreach (var expense in previous.Where(e => existingNames.Add(e.Name)))
         {
             var copy = new Expense
             {
@@ -106,13 +119,13 @@ public class RecurringCopyService(
         return copied;
     }
 
-    private async Task<int> CopySavingsAsync(int prevYear, int prevMonth, int year, int month, CancellationToken ct)
+    private async Task<int> CopySavingsAsync(int fromYear, int fromMonth, int year, int month, Func<Saving, bool> include, CancellationToken ct)
     {
-        var previous = (await savingRepository.GetByMonthAsync(prevYear, prevMonth, ct)).Where(s => s.IsRecurring).ToList();
+        var previous = (await savingRepository.GetByMonthAsync(fromYear, fromMonth, ct)).Where(include).ToList();
         var existingNames = (await savingRepository.GetByMonthAsync(year, month, ct)).Select(s => s.Name).ToHashSet();
 
         var copied = 0;
-        foreach (var saving in previous.Where(s => !existingNames.Contains(s.Name)))
+        foreach (var saving in previous.Where(s => existingNames.Add(s.Name)))
         {
             await savingRepository.AddAsync(new Saving
             {

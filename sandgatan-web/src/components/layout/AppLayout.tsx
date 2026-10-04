@@ -8,6 +8,7 @@ import {
   IconPigMoney,
   IconReceipt2,
   IconSettings,
+  IconShoppingCart,
   IconSun,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Översikt', icon: IconLayoutDashboard },
   { to: '/inkomster', label: 'Inkomster', icon: IconCoin },
   { to: '/utgifter', label: 'Utgifter', icon: IconReceipt2 },
+  { to: '/vardagskop', label: 'Vardagsköp', icon: IconShoppingCart },
   { to: '/sparande', label: 'Sparande', icon: IconPigMoney },
   { to: '/installningar', label: 'Inställningar', icon: IconSettings },
 ]

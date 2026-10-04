@@ -9,6 +9,17 @@ public class BudgetSummaryDto
     public decimal TotalIncome { get; set; }
     public decimal TotalFixedExpenses { get; set; }
     public decimal TotalVariableExpenses { get; set; }
+
+    /// <summary>Sum of everyday purchases ("vardagsköp") logged this month.</summary>
+    public decimal TotalPurchases { get; set; }
+
+    /// <summary>The month's everyday-purchase budget (possibly inherited from an earlier month); null if never set.</summary>
+    public decimal? SpendingBudget { get; set; }
+
+    /// <summary>What everyday purchases contribute to TotalExpenses: the budget, or the actual sum once it is exceeded.</summary>
+    public decimal PlannedPurchases { get; set; }
+
+    /// <summary>Fixed + variable expenses + <see cref="PlannedPurchases"/>.</summary>
     public decimal TotalExpenses { get; set; }
     public decimal TotalSavings { get; set; }
 

@@ -19,6 +19,7 @@ import { useCategories, useDeleteCategory } from '../api/categories'
 import type { CategoryDto, CategoryType } from '../api/types'
 import { CategoryDot } from '../components/CategoryDot'
 import { CategoryModal } from '../components/CategoryModal'
+import { CopyToNextMonthButton } from '../components/CopyToNextMonthButton'
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
 import { MONTH_NAMES_SV } from '../lib/month'
@@ -84,6 +85,10 @@ export function SettingsPage() {
         <Button leftSection={<IconRefresh size={18} />} onClick={handleCopyRecurring} loading={copyRecurring.isPending} variant="light">
           Kopiera återkommande poster hit
         </Button>
+        <Text size="sm" c="dimmed" mt="lg" mb="md">
+          Vill du i stället välja fritt bland alla poster (även de som inte är återkommande) i {MONTH_NAMES_SV[month - 1]} {year} och kopiera dem till nästa månad:
+        </Text>
+        <CopyToNextMonthButton />
       </Card>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">

@@ -1,4 +1,5 @@
 import { Button, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { useState } from 'react'
 import {
   IconCircleCheck,
   IconCoin,
@@ -7,14 +8,19 @@ import {
   IconReceipt2,
   IconReceiptOff,
   IconReportMoney,
+  IconShoppingCart,
   IconWallet,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useBudgetSummary } from '../api/budget'
+import { CopyToNextMonthButton } from '../components/CopyToNextMonthButton'
 import { CompactOverview } from '../components/CompactOverview'
 import { DistributionBar } from '../components/DistributionBar'
 import { ExpensesByCategoryChart } from '../components/ExpensesByCategoryChart'
 import { LoanCard } from '../components/LoanCard'
+import { PaydayCountdown } from '../components/PaydayCountdown'
+import { PurchaseModal } from '../components/PurchaseModal'
+import { SpendingCard } from '../components/SpendingCard'
 import { SummaryCard } from '../components/SummaryCard'
 import { useBudgetPeriod } from '../context/BudgetPeriodContext'
 import { formatSek } from '../lib/format'
@@ -26,12 +32,19 @@ export function DashboardPage() {
   const { year, month } = useBudgetPeriod()
   const { data, isLoading } = useBudgetSummary(year, month)
   const navigate = useNavigate()
+  const [purchaseOpen, setPurchaseOpen] = useState(false)
 
   return (
     <Stack gap="lg">
       <Group justify="space-between" wrap="wrap">
-        <Title order={2}>Översikt</Title>
+        <Stack gap={2}>
+          <Title order={2}>Översikt</Title>
+          <PaydayCountdown />
+        </Stack>
         <Group gap="sm">
+          <Button leftSection={<IconShoppingCart size={18} />} onClick={() => setPurchaseOpen(true)}>
+            Köp
+          </Button>
           <Button variant="light" leftSection={<IconCoin size={18} />} onClick={() => navigate('/inkomster', { state: { openAdd: true } })}>
             Lägg till inkomst
           </Button>
@@ -41,6 +54,7 @@ export function DashboardPage() {
           <Button variant="light" leftSection={<IconPigMoney size={18} />} onClick={() => navigate('/sparande', { state: { openAdd: true } })}>
             Lägg till sparande
           </Button>
+          <CopyToNextMonthButton variant="default" />
         </Group>
       </Group>
 
@@ -52,7 +66,13 @@ export function DashboardPage() {
             <SummaryCard label="Total inkomst" amount={data.totalIncome} icon={IconCoin} color="teal" emphasis />
             <SummaryCard label="Fasta utgifter" amount={data.totalFixedExpenses} icon={IconReceipt2} color="blue" />
             <SummaryCard label="Rörliga utgifter" amount={data.totalVariableExpenses} icon={IconReceiptOff} color="orange" />
-            <SummaryCard label="Totala utgifter" amount={data.totalExpenses} icon={IconReceipt2} color="red" />
+            <SummaryCard
+              label="Totala utgifter"
+              amount={data.totalExpenses}
+              icon={IconReceipt2}
+              color="red"
+              hint={data.plannedPurchases > 0 ? `inkl. vardagsköp ${formatSek(data.plannedPurchases)}` : undefined}
+            />
             <SummaryCard label="Sparande" amount={data.totalSavings} icon={IconPigMoney} color="grape" />
             <SummaryCard label="Kvar efter utgifter" amount={data.remainingAfterExpenses} icon={IconWallet} color="brand" emphasis />
             <SummaryCard label="Kvar efter sparande" amount={data.remainingAfterSavings} icon={IconReportMoney} color="brand" emphasis />
@@ -66,7 +86,14 @@ export function DashboardPage() {
             )}
           </SimpleGrid>
 
-          <DistributionBar fixed={data.totalFixedExpenses} variable={data.totalVariableExpenses} savings={data.totalSavings} />
+          <SpendingCard year={year} month={month} showRecent showPayday={false} />
+
+          <DistributionBar
+            fixed={data.totalFixedExpenses}
+            variable={data.totalVariableExpenses}
+            purchases={data.plannedPurchases}
+            savings={data.totalSavings}
+          />
 
           <ExpensesByCategoryChart year={year} month={month} />
 
@@ -82,6 +109,8 @@ export function DashboardPage() {
           <CompactOverview year={year} month={month} />
         </>
       )}
+
+      <PurchaseModal opened={purchaseOpen} onClose={() => setPurchaseOpen(false)} />
     </Stack>
   )
 }

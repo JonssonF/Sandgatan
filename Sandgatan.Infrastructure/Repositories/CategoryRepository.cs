@@ -15,7 +15,8 @@ public class CategoryRepository(SandgatanDbContext db) : ICategoryRepository
 
     public async Task<bool> IsInUseAsync(int id, CancellationToken ct = default) =>
         await db.Expenses.AnyAsync(e => e.CategoryId == id, ct)
-        || await db.Incomes.AnyAsync(i => i.CategoryId == id, ct);
+        || await db.Incomes.AnyAsync(i => i.CategoryId == id, ct)
+        || await db.Purchases.AnyAsync(p => p.CategoryId == id, ct);
 
     public async Task<Category> AddAsync(Category category, CancellationToken ct = default)
     {
