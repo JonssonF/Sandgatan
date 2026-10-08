@@ -1,0 +1,229 @@
+# Kameraövervakning – klistra in i HA: dashboarden "Kamerövervakning" → ⋮ → Redigera
+# dashboard → ⋮ → Raw configuration editor (ersätt allt) → Spara.
+#
+# En kolumn per kamera på surfplatta/dator, staplade på mobil. Tryck på en
+# livebild för helskärm. PTZ-knapparna flyttar kameran det antal grader som
+# står under "Inställningar".
+
+title: Kameraövervakning
+views:
+  - title: Kameror
+    path: kameror
+    icon: mdi:cctv
+    type: sections
+    max_columns: 3
+    sections:
+      # ---------- Framsidan (generisk kamera, endast bild) ----------
+      - type: grid
+        cards:
+          - type: heading
+            heading: Framsidan
+            icon: mdi:doorbell-video
+          - type: picture-entity
+            entity: camera.framsidan_dorrklockan
+            name: Dörrklockan
+            camera_view: live
+            show_state: false
+            fit_mode: contain
+            grid_options:
+              columns: full
+
+      # ---------- Altanen (Tapo C500) ----------
+      - type: grid
+        cards:
+          - type: heading
+            heading: Altanen
+            icon: mdi:cctv
+            badges:
+              - type: entity
+                entity: sensor.altanen_signalstyrka_2
+          - type: picture-entity
+            entity: camera.altanen_livevisning
+            name: Altanen
+            camera_view: live
+            show_state: false
+            fit_mode: contain
+            grid_options:
+              columns: full
+          # PTZ
+          - &ptz_button
+            type: button
+            name: Vänster
+            show_name: false
+            icon: mdi:arrow-left-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.altanen_panorera_vanster
+            grid_options:
+              columns: 3
+          - <<: *ptz_button
+            name: Upp
+            icon: mdi:arrow-up-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.altanen_tilta_upp
+          - <<: *ptz_button
+            name: Ner
+            icon: mdi:arrow-down-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.altanen_tilta_ner
+          - <<: *ptz_button
+            name: Höger
+            icon: mdi:arrow-right-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.altanen_panorera_hoger
+          # Snabbknappar
+          - type: tile
+            entity: switch.altanen
+            name: Kamera på
+            icon: mdi:cctv
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.altanen_rorelsedetektering
+            name: Rörelse
+            icon: mdi:motion-sensor
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.altanen_detektering_av_personer
+            name: Personer
+            icon: mdi:account-search
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.altanen_led
+            name: LED
+            icon: mdi:led-on
+            tap_action:
+              action: toggle
+          # Inställningar
+          - type: heading
+            heading: Inställningar
+            heading_style: subtitle
+          - type: tile
+            entity: number.altanen_panorera_grader
+            name: Steg sidled
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: number.altanen_tilt_grader
+            name: Steg upp/ner
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: switch.altanen_detektering_av_sabotage
+            name: Sabotagelarm
+            icon: mdi:shield-alert
+            tap_action:
+              action: toggle
+
+      # ---------- Garageuppfart (Tapo C500) ----------
+      - type: grid
+        cards:
+          - type: heading
+            heading: Garageuppfart
+            icon: mdi:garage
+            badges:
+              - type: entity
+                entity: sensor.garageuppfart_signalstyrka_2
+          - type: picture-entity
+            entity: camera.garageuppfart_livevisning
+            name: Garageuppfart
+            camera_view: live
+            show_state: false
+            fit_mode: contain
+            grid_options:
+              columns: full
+          # PTZ
+          - <<: *ptz_button
+            name: Vänster
+            icon: mdi:arrow-left-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.garageuppfart_panorera_vanster
+          - <<: *ptz_button
+            name: Upp
+            icon: mdi:arrow-up-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.garageuppfart_tilta_upp
+          - <<: *ptz_button
+            name: Ner
+            icon: mdi:arrow-down-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.garageuppfart_tilta_ner
+          - <<: *ptz_button
+            name: Höger
+            icon: mdi:arrow-right-bold
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.garageuppfart_panorera_hoger
+          # Snabbknappar
+          - type: tile
+            entity: switch.garageuppfart
+            name: Kamera på
+            icon: mdi:cctv
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.garageuppfart_rorelsedetektering
+            name: Rörelse
+            icon: mdi:motion-sensor
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.garageuppfart_detektering_av_personer
+            name: Personer
+            icon: mdi:account-search
+            tap_action:
+              action: toggle
+          - type: tile
+            entity: switch.garageuppfart_led
+            name: LED
+            icon: mdi:led-on
+            tap_action:
+              action: toggle
+          # Inställningar
+          - type: heading
+            heading: Inställningar
+            heading_style: subtitle
+          - type: tile
+            entity: number.garageuppfart_panorera_grader
+            name: Steg sidled
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: number.garageuppfart_tilt_grader
+            name: Steg upp/ner
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: switch.garageuppfart_detektering_av_sabotage
+            name: Sabotagelarm
+            icon: mdi:shield-alert
+            tap_action:
+              action: toggle
