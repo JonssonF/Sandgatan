@@ -93,10 +93,30 @@ Detta bygger och startar två containrar:
 Öppna `http://<raspberry-pi-ip>:8080` från valfri enhet på hemnätverket. Lägg till appen på
 hemskärmen (iOS/Android) för en installerad PWA i standalone-läge.
 
-> Docker-filerna är skrivna enligt standardmönster (multi-stage build, icke-root-användare i
-> API-containern, named volume för SQLite) men har inte kunnat testköras i den här miljön eftersom
-> Docker inte var tillgängligt. Kör `docker compose up -d --build` och stäm av loggarna
-> (`docker compose logs -f`) första gången du deployar.
+På Pi:n ligger repot i `~/deploy/Sandgatan` och appen nås på `http://raspberrypi:8080`. Uppdatera med:
+
+```bash
+ssh raspberrypi 'cd ~/deploy/Sandgatan && git pull && docker compose up -d --build'
+```
+
+## Home Assistant (familjedashboarden)
+
+Home Assistant är motorn i familjedashboarden (kalender, väder, inköpslista, Hue, Plejd, el/sol).
+Sandgatan förblir budgetappen och visas i dashboarden som ett kort som öppnar hela appen.
+
+HA körs som container (`homeassistant/docker-compose.yml`) i en egen mapp på Pi:n,
+`~/deploy/HomeAssistant`, så att den startas om och uppdateras oberoende av Sandgatan. Den kör med
+`network_mode: host` (krävs för att hitta enheter i nätverket och för Bluetooth/Plejd) och nås på
+`http://raspberrypi:8123`. Konfigurationen ligger i `~/deploy/HomeAssistant/config` (ägs av root –
+redigera via HA:s gränssnitt eller `docker exec homeassistant ...`). `recorder` är inställd på
+`commit_interval: 30` och `purge_keep_days: 10` för att skona SD-kortet.
+
+```bash
+ssh raspberrypi 'cd ~/deploy/HomeAssistant && docker compose pull && docker compose up -d'   # uppdatera HA
+```
+
+HA OS och HA Supervised valdes bort: HA OS ersätter hela operativsystemet (Pi:n kör andra projekt),
+och Supervised är avvecklat. Container-varianten saknar add-on-butiken, men HACS fungerar.
 
 ### Miljövariabler / secrets
 
@@ -127,6 +147,11 @@ Identity eller en enkel PIN-kod i frontend) senare utan större omskrivning. Lä
 API-nycklar eller andra hemligheter i repot — använd miljövariabler/secrets.
 
 ## Framtida integrationsplan
+
+> **Beslut 2026-10-08:** Home Assistant blir familjedashboarden. Kalender, väder, todo/inköpslista,
+> barnens schema, Hue/Plejd och el/sol hanteras därför i första hand som HA-integrationer, inte i
+> Sandgatan. Listan nedan är kvar som referens; det som fortfarande är aktuellt *i* Sandgatan är
+> främst bank/lån och sådant som jämför verkliga kostnader mot budgeten.
 
 Följande är **inte** implementerat i v1, men arkitekturen (interface i
 `Sandgatan.Application/Interfaces/Integrations/`) är förberedd för det:

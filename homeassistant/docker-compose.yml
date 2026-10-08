@@ -1,0 +1,17 @@
+# Home Assistant (Container) – familjedashboarden. Körs separat från Sandgatan
+# så att de kan startas om/uppdateras var för sig. På Pi:n: ~/deploy/HomeAssistant.
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    # Host network is needed for device discovery (Hue, Chromecast, mDNS) and Bluetooth (Plejd).
+    network_mode: host
+    privileged: true
+    environment:
+      TZ: Europe/Stockholm
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+      # Bluetooth via the host's BlueZ (needed for Plejd).
+      - /run/dbus:/run/dbus:ro

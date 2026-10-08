@@ -20,14 +20,12 @@ RUN dotnet publish Sandgatan.Api/Sandgatan.Api.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-RUN useradd --uid 1654 --user-group sandgatan \
-    && mkdir -p /app/data \
-    && chown -R sandgatan:sandgatan /app
+# The .NET 8 images ship a non-root "app" user (UID 1654) – run as that.
+RUN mkdir -p /app/data && chown app:app /app/data
 
 COPY --from=build /app/publish .
-RUN chown -R sandgatan:sandgatan /app
 
-USER sandgatan
+USER app
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ConnectionStrings__Default="Data Source=/app/data/sandgatan.db"
 EXPOSE 8080
