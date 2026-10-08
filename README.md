@@ -118,6 +118,10 @@ ssh raspberrypi 'cd ~/deploy/HomeAssistant && docker compose pull && docker comp
 HA OS och HA Supervised valdes bort: HA OS ersätter hela operativsystemet (Pi:n kör andra projekt),
 och Supervised är avvecklat. Container-varianten saknar add-on-butiken, men HACS fungerar.
 
+**HACS** är installerat manuellt i `config/custom_components/hacs` (release-zip från
+github.com/hacs/integration) och aktiverat via Inställningar → Enheter och tjänster → Lägg till
+integration → HACS (GitHub-inloggning). HACS uppdaterar sig självt därefter.
+
 ### Miljövariabler / secrets
 
 Inga hemligheter finns i repot. `ConnectionStrings__Default` och `Cors__AllowedOrigins__0` sätts som
