@@ -45,7 +45,7 @@ views:
             fit_mode: contain
             grid_options:
               columns: full
-          # PTZ
+          # PTZ – Tapo panorerar sett från kameran, så pilarna anropar motsatt knapp (medvetet)
           - &ptz_button
             type: button
             name: Vänster
@@ -55,7 +55,7 @@ views:
               action: perform-action
               perform_action: button.press
               target:
-                entity_id: button.altanen_panorera_vanster
+                entity_id: button.altanen_panorera_hoger
             grid_options:
               columns: 3
           - <<: *ptz_button
@@ -81,7 +81,7 @@ views:
               action: perform-action
               perform_action: button.press
               target:
-                entity_id: button.altanen_panorera_hoger
+                entity_id: button.altanen_panorera_vanster
           # Snabbknappar
           - type: tile
             entity: switch.altanen
@@ -147,7 +147,7 @@ views:
             fit_mode: contain
             grid_options:
               columns: full
-          # PTZ
+          # PTZ – Tapo panorerar sett från kameran, så pilarna anropar motsatt knapp (medvetet)
           - <<: *ptz_button
             name: Vänster
             icon: mdi:arrow-left-bold
@@ -155,7 +155,7 @@ views:
               action: perform-action
               perform_action: button.press
               target:
-                entity_id: button.garageuppfart_panorera_vanster
+                entity_id: button.garageuppfart_panorera_hoger
           - <<: *ptz_button
             name: Upp
             icon: mdi:arrow-up-bold
@@ -179,7 +179,7 @@ views:
               action: perform-action
               perform_action: button.press
               target:
-                entity_id: button.garageuppfart_panorera_hoger
+                entity_id: button.garageuppfart_panorera_vanster
           # Snabbknappar
           - type: tile
             entity: switch.garageuppfart
